@@ -43,8 +43,6 @@ std::cin.ignore(100, '\n');
 
 
 
-
-
 应该尽可能地使用4个空格而不是一个制表符。
 
 ______
@@ -144,4 +142,118 @@ if (fin.is_open()) {
   fin.close();
 }
 ```
+
+_____
+
+​	编程习惯：在每个函数的结尾加上一条注释。坚持使用同一种风格的命名方式。
+
+​	函数的原型通常集中安排在`main()`函数的定义之前，而定义函数的完整内容依次列在`main()`函数的后面。
+
+
+
+​	给函数的输入参数设置一个默认值：**在函数原型里用赋值操作符把一个值赋值给那个输入参数**。且必须把所有的必选参数放在可选参数之前。
+
+```c++
+void fN(int n1, int n2=6);
+
+// 使用注释将默认值标识出来
+void fN(int n1, int n2 /* =6 */) {
+  // ...
+}
+```
+
+​	内联函数（inline function）：在`main()`函数的签名定义它，不需要先为它定义一个原型。
+
+
+
+​	**函数重载**（Overloading）：用同样的名字再定义一个有着不同参数但有着同样用途的函数。重载的函数最适用于需要对不同的数据类型进行同样处理的场合。
+
+
+
+​	强制转换操作符：`static_cast、reinterpret_cast、const_cast、dynamic_cast`，其语法是`operator<type>(data)`。
+
+- `static_cast`：其和老式的C强制转换操作符的用法差不多，用来把一个简单的类型转换为另一个。
+- `reinterpret_cast`：可以在不改变实际数据的情况下改变数据的类型，其易留下编程漏洞。但可用于把地址转换为一个整数。
+- `const_cast`：把一个`const`类型的常量转换为一个非常量值。
+- `dynamic_cast`：要与类搭配使用。
+
+
+
+​	无类型指针：`void *pointerName`。
+
+
+
+​	数组的名字同时也是一个指向其基地址（其第一个元素的地址）的指针。
+
+```c++
+int myArray[] = {25, 209, -12};
+int *ptr1 = &myArray[0];
+int *ptr2 = myArray;
+ptr1++;	// 指向下一个元素的地址
+```
+
+
+
+​	联合（union）：可容纳多种不同类型的值，但它每次只能存储这些值中的某一个。
+
+```c++
+union id {
+	std::string maidenName;
+	unsigned short ssn;
+	std::string pet;
+};
+```
+
+
+
+​	以引用传递方式传递输入参数：
+
+```c++
+void changeVar(int &myVar, int newValue);
+// 调用方式
+int myNum = 20;
+changeVar(myNum, 90);
+// changeVar(20, 90); wrong
+
+int &myFunction();	// 以引用传递方式返回
+
+// 获得引用传递方式带来的性能改善，但不想改变其值
+void myFunc(const int &myNum);
+myFunc(7);	
+```
+
+
+
+​	类型别名：
+
+```c++
+typedef int* intPointer;
+```
+
+​	`enum`类型：1）对变量的可取值加以限制；2）可用作`switch`条件语句的`case`标号。
+
+```c++
+enum weekdays {Monday, Tuesday, Wednesday, Thursday, Friday};
+weekdays today;
+today = Tuesday;
+```
+
+
+
+#### 基本概念
+
+##### 类
+
+​	C++允许在类里声明常量，但不允许对它进行赋值。若想绕开这一限制，可创建一个静态常量。
+
+```c++
+class Car {
+	public:
+		static const float TANKSIZE = 12.5;
+};
+```
+
+
+
+​	如果一个类的构造器从计算机申请了一块内存，就必须在析构器里释放那块内存。
 

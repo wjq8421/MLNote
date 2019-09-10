@@ -255,5 +255,106 @@ class Car {
 
 
 
-​	如果一个类的构造器从计算机申请了一块内存，就必须在析构器里释放那块内存。
+​	如果一个类的构造器从计算机申请了一块内存，就必须在析构器里释放那块内存。如构造器为写操作打开一个文件，而析构器将关闭那个文件。
+
+```c++
+class StoreQuote {
+public:
+    std::string quote, speaker;
+    std::ofstream fileOutput;
+
+    StoreQuote();
+    ~StoreQuote();
+
+    void inputQuote();
+    void inputSpeaker();
+    bool write();
+};
+
+StoreQuote::StoreQuote() {
+    fileOutput.open("Quote.txt", std::ios::app);
+}
+
+StoreQuote::~StoreQuote() {
+    fileOutput.close();
+}
+
+void StoreQuote::inputQuote() {
+    std::getline(std::cin, quote);
+}
+
+void StoreQuote::inputSpeaker() {
+    std::getline(std::cin, speaker);
+}
+
+bool StoreQuote::write() {
+    if (fileOutput.is_open()) {
+        fileOutput << quote << "|"
+            << speaker << "\n";
+        return true;
+    } else {
+        return false;
+    }
+}
+```
+
+​	从小类开始，一个完美的类应该紧凑、简明，有明确的针对目标。
+
+​	如果基类有一个构造器，比如`Pet()`，它将在创建`Cat`类型的对象时最先被调用。因为基类必须在子类之前初始化。而基类的析构器将在子类的最后一条语句执行完毕之后才被调用。
+
+```c++
+class Pet {
+public:
+    Pet(std::string theName);
+    std::string name;
+};
+
+class Cat: public Pet {
+public:
+    Cat(std::string theName);
+};
+
+Pet::Pet(std::string theName) {
+    name = theName;
+}
+
+Cat::Cat(std::string theName) : Pet(theName) {
+}
+```
+
+​	构造器越简明越好，你应该只用它来初始化各有关属性。
+
+​	访问级别：`public`：任何代码可访问；`protected`：类本身和其子类可访问；、`private`：只有类本身可以访问。
+
+​	`ClassName::methodName()`：在不创建对象的情况下调用类的方法。
+
+
+
+​	重载函数/方法越多，程序就越不容易看懂。
+
+​	对方法进行覆盖时一定要认真仔细，确保输入参数和返回值与原来的一致。
+
+
+
+​	一个完全无关的类需要访问某个protected成员，甚至是某个private成员，该怎么办？**友元关系**。
+
+```c++
+class Pet {
+public:
+    Pet(std::string theName);
+    void eat();
+    void sleep();
+protected:
+    std::string name;
+    friend class PetRenamer;  // 友元关系
+};
+
+class PetRenamer {
+public:
+    PetRenamer(std::string theName);
+    void rename(Pet *pet, std::string newName);
+private:
+    std::string name;
+};
+```
 

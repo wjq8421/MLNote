@@ -1,3 +1,5 @@
+
+
 神经网络上的局部极值问题：深层网络虽然局部极值非常多，但是通过深度学习的Batch Gradient Descent优化方法很难陷进去，而且就算陷进去，其局部极小值点与全局极小值点也是非常接近的。而浅层网络却虽然拥有较少的局部极小值点，但是却很容易陷进去，且这些局部极小值点与全局极小值点相差较大。所以更希望使用大容量的网络去训练模型，同时运用一些方法来控制网络的过拟合。
 
 
@@ -385,5 +387,109 @@ _____
 
 #### GoogleNet
 
+1. 采用Inception模块，而且没有全连接层。
+
+   Inception模块设计了一个局部的网络拓扑结构，然后将这些模块堆叠在一起形成一个抽象层网络结构。即运用几个并行的滤波器对输入进行卷积和池化，这些滤波器有不同的感受野，最后将输出的结果按深度拼接在一起形成输出层。
+
+![img](E:\文件管理集合\笔记\机器学习\Cpp\pic\inception模块.jpg)
+
+​	<font color=red>**$1\times 1$卷积的作用**</font>
+
+1. 在相同尺寸的感受野中叠加更多的卷积，能提取到更丰富的特征。对于某个像素点来说，$1\times 1$卷积等效于该像素点在所有特征上进行一次全连接的计算。（参考Network in Network结构）
+2. 使用$1\times 1$卷积对输入先进行降维，减少特征数之后再做卷积计算量就会显著减少。如下图，从$192\times 256\times 3\times 3\times 32\times 32$减小为$192\times 96\times 1\times 1\times 32\times 32 + 96\times 256\times 3\times 3\times 32\times 32$。
+
+![img](E:\文件管理集合\笔记\机器学习\Cpp\pic\增加1乘1卷积后降低了计算量.jpg)
+
+​	<font color=red>多个尺寸上进行卷积再聚合的解释</font>
+
+1. 在多个尺度上同时进行卷积，能提取到不同尺度的特征，特征更为丰富也意味着最后分类判断时更加准确。
+2. 传统的卷积层的输入数据只和一种尺度（如$3\times 3$）的卷积核进行卷积，输出固定维度（如256）的数据，所有256个输出特征基本上是均匀分布在$3\times 3$尺度范围上，这可理解成输出了一个稀疏分布的特征集。而inception在多个尺度上提取特征，输出的256个特征就不再是均匀分布，而是相关性强的特征聚集在一起，这可理解成多个密集分布的子特征集，能加快收敛速度。（可参考稀疏矩阵分解成密集矩阵计算的原理）
+
+```python
+import torch.nn.functional as F
+
+class BasicConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, **kwargs):
+        super(BasicConv2d, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
+        
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        return F.relu(x, inplace=True)
+    
+class Inception(nn.Module):
+    def __init__(self, in_channels, pool_features):
+        super(Inception, self).__init__()
+        self.branch1x1 = BasicConv2d(in_channels, 64, kernel_size=1)
+        
+        self.branch5x5_1 = BasicConv2d(in_channels, 48, kernel_size=1)
+        self.branch5x5_2 = BasicConv2d(48, 64, kernel_size=5, padding=2)
+        
+        self.branch3x3db_1 = BasicConv2d(in_channels, 64, kernel_size=1)
+        self.branch3x3db_2 = BasicConv2d(64, 96, kernel_size=3, padding=1)
+        self.branch3x3db_3 = BasicConv2d(96, 96, kernel_size=3, padding=1)
+        
+        self.branch_pool = BasicConv2d(in_channels, pool_features, kernel_size=1)
+        
+    def forward(self, x):
+        branch1x1 = self.branch1x1(x)
+        
+        branch5x5 = self.branch5x5_1(x)
+        branch5x5 = self.branch5x5_2(branch5x5)
+        
+        branch3x3db1 = self.branch3x3db_1(x)
+        branch3x3db1 = self.branch3x3db_2(branch3x3db1)
+        branch3x3db1 = self.branch3x3db_3(branch3x3db1)
+        
+        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
+        branch_pool = self.branch_pool(branch_pool)
+        
+        outputs = [branch1x1, branch5x5, branch3x3db1, branch_pool]
+        return torch.cat(outputs, 1) # 按深度拼接起来
+```
 
 
+
+#### ResNet
+
+​	解决的问题：在不断加深神经网络的时候，会出现一个Degradation，即准确率会先上升然后达到饱和，再持续增加深度则会导致模型准确率下降。
+
+![img](E:\文件管理集合\笔记\机器学习\Cpp\pic\resnet)
+
+​	上图为ResNet的残差学习单元，其不再学习一个完整的输出$H(x)$，而是学习输出和输入的差别$F(x)=H(x)-x$，即残差。
+
+```python
+def conv3x3(in_planes, out_planes, stride=1):
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+
+class BasicBlock(nn.Module):
+    def __init__(self, inplanes, planes, stride=1, downsample=None):
+        super(BasicBlock, self).__init__()
+        self.conv1 = conv3x3(inplanes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.downsample = downsample
+        self.stride = stride
+        
+    def forward(self, x):
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        
+        out = self.conv2(out)
+        out = self.bn2(out)
+        
+        if self.downsample is not None:
+            residual = self.downsample(residual)
+        
+        out += residual
+        out = self.relu(out)
+        return out
+```
+
+Network in Network，Highway Network。

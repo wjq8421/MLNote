@@ -493,3 +493,14 @@ class BasicBlock(nn.Module):
 ```
 
 Network in Network，Highway Network。
+
+____
+
+ 1. 拍照时的光照条件；
+
+ 2. 物体本身的变形；
+
+ 3. 物体本身是否隐藏在一些遮蔽物中；
+
+    由于上述等问题，希望能够对原始图片进行增强，在一定程度上解决部分问题。
+

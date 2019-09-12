@@ -1,4 +1,8 @@
+### 目录
 
+[TOC]
+
+____
 
 神经网络上的局部极值问题：深层网络虽然局部极值非常多，但是通过深度学习的Batch Gradient Descent优化方法很难陷进去，而且就算陷进去，其局部极小值点与全局极小值点也是非常接近的。而浅层网络却虽然拥有较少的局部极小值点，但是却很容易陷进去，且这些局部极小值点与全局极小值点相差较大。所以更希望使用大容量的网络去训练模型，同时运用一些方法来控制网络的过拟合。
 
@@ -293,6 +297,7 @@ optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
 for epoch in range(num_epoches):
     train_loss = 0.0
+    train_acc = 0
     for batch_x, batch_y in train_loader:
         # shape of batch_x: [64, 1, 28, 28]
         # shape of batch_y: [64]
@@ -303,14 +308,16 @@ for epoch in range(num_epoches):
             batch_x = Variable(batch_x.view(-1, 28*28))
             batch_y = Variable(batch_y)
         
-        out = model(batch_x)
+        out = model(batch_x) # shape of out: [64, 10]
         loss = criterion(out, batch_y)
         
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        train_loss = loss.data.item()
-    print('Epoch [{}/{}], loss: {:.6f}'.format(epoch, num_epoches, train_loss))
+        train_loss += loss.data.item() * batch_y.size(0)
+        _, pred = torch.max(out, 1)
+  			train_acc += (pred == batch_y).sum().item()
+    print('Epoch [{}/{}], loss: {:.6f}, acc: {:.6f}'.format(epoch, num_epoches, train_loss / len(train_dataset), train_acc / len(train_dataset)))
   
 model.eval()
 eval_loss = 0.0
@@ -326,11 +333,11 @@ for data in test_loader:
         label = Variable(label, volatile=True)
     
     out = model(img)
-    loss = criterion(out, label)
+    loss = criterion(out, label) # 返回的loss为batch个样本的平均值
     eval_loss += loss.data.item() * label.size(0)
     _, pred = torch.max(out, 1)
-    num_corrent = (pred == label).sum()
-    eval_acc += num_corrent.item()
+    num_corrent = (pred == label).sum() # 获取每个批次预判正确的个数
+    eval_acc += num_corrent.item() 
     
 print('Test Loss: {:.6f}, Acc: {:.6f}'.format(eval_loss / len(test_dataset), eval_acc / len(test_dataset)))
 ```
@@ -504,3 +511,12 @@ ____
 
     由于上述等问题，希望能够对原始图片进行增强，在一定程度上解决部分问题。
 
+_____
+
+### 图片数据处理
+
+
+
+参考链接
+
+1. 在Pytorch中建立自己的图片数据集：https://oidiotlin.com/create-custom-dataset-in-pytorch/

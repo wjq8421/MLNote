@@ -340,6 +340,23 @@ for data in test_loader:
     eval_acc += num_corrent.item() 
     
 print('Test Loss: {:.6f}, Acc: {:.6f}'.format(eval_loss / len(test_dataset), eval_acc / len(test_dataset)))
+
+# 将结果输出到文件
+model.eval()
+result = torch.LongTensor()
+for data, label in test_loader:
+    data = data.view(data.size(0), 1, 28, 28)
+    if torch.cuda.is_available():
+        data = Variable(data).cuda()
+    else:
+        data = Variable(data)
+    
+    out = model(data)
+    _, pred = torch.max(out, 1)
+    result = torch.cat((result, pred.cpu()), dim=0)
+  
+result = pd.DataFrame({'ImageId':range(1, result.size(0)+1), 'Label':result.numpy()})
+result.to_csv('result_0912.csv', index=False)
 ```
 
 _____
@@ -515,8 +532,12 @@ _____
 
 ### 图片数据处理
 
-
-
 参考链接
 
 1. 在Pytorch中建立自己的图片数据集：https://oidiotlin.com/create-custom-dataset-in-pytorch/
+
+_____
+
+### 自动编码器
+
+应用：1）数据去噪；2）进行可视化降维；3）生成数据。

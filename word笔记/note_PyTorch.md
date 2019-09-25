@@ -292,9 +292,11 @@ model = BatchNet(28 * 28, 300, 100, 10)
 if torch.cuda.is_available():
     model.cuda()
     
+# 定义损失函数和优化器
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=learning_rate)
 
+# 训练网络
 for epoch in range(num_epoches):
     train_loss = 0.0
     train_acc = 0

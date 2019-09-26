@@ -62,7 +62,13 @@ https://blog.csdn.net/zhanghenan123/article/details/80853523
 
 ### SIFT
 
+> 尺度不变特征变换（Scale-invariant Feature Transform）
 
+
+
+SIFT算法原理解析：https://blog.csdn.net/hit2015spring/article/details/52895367
+
+SIFT算法总结：https://blog.csdn.net/jancis/article/details/80824793
 
 
 

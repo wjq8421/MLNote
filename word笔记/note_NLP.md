@@ -36,7 +36,7 @@ $$
 
 #### skip-gram
 
-
+> learning high-quality vector representations of words from large amounts unstructured text data.
 
 
 

@@ -64,6 +64,11 @@ https://blog.csdn.net/zhanghenan123/article/details/80853523
 
 > 尺度不变特征变换（Scale-invariant Feature Transform）
 
+局部不变性包括：尺度不变性、旋转不变性。
+
+1. 尺度不变性：在识别物体时，不管这个物体或远或近，都能对它进行正确的辨认。
+2. 旋转不变性：在物体发生旋转时，照样可以正确地辨认它。
+
 
 
 SIFT算法原理解析：https://blog.csdn.net/hit2015spring/article/details/52895367

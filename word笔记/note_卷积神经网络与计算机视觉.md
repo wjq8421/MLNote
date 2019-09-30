@@ -31,7 +31,7 @@ ____
 计算梯度强度值$g$和梯度方向$\theta$：
 $$
 g=\sqrt{g_x^2+g_y^2} \\
-\theta=arctan\frac{g_x}{g_y}
+\theta=arctan\frac{g_y}{g_x}
 $$
 
 由于梯度方向将会取绝对值，因此梯度方向的范围是0~180度。
@@ -58,7 +58,7 @@ HOG特征：https://zhuanlan.zhihu.com/p/40960756
 
 https://blog.csdn.net/zhanghenan123/article/details/80853523
 
-
+______
 
 ### SIFT
 
@@ -71,11 +71,95 @@ https://blog.csdn.net/zhanghenan123/article/details/80853523
 
 
 
+​	对旋转、尺度缩放、亮度变化保持保持不变，对视觉变化、仿射变换、噪声也保持一定程度的稳定性。
+
+
+
+#### 尺度空间
+
+​	在未知的场景中，计算机视觉并不能提供物体的尺度大小，其中的一种方法是把物体不同尺度下的图像都提供给机器，让机器能够对物体在不同的尺度下有一个统一的认知。
+
+​	**高斯尺度空间**：对图像金字塔的每层图像使用不同的参数$\sigma$进行高斯模糊，使每层金字塔有多张高斯模糊过的图像。降采样时，金字塔上边一组图像的第一张由其下面一组图像倒数第三张降采样得到。
+
+​	高斯模糊：
+$$
+L(x,y,\sigma)=G(x, y,\sigma)*I(x,y)
+$$
+其中，$G(x,y,\sigma)$为高斯核函数：
+$$
+G(x,y,\sigma)=\frac{1}{2\pi \sigma^2}e^{\frac{x^2+y^2}{2\sigma^2}}
+$$
+$\sigma$为尺度空间因子，是高斯正态分布的标准差，反映了图像被模糊的程度，其值越大图像越模糊。
+
+​	将相邻的两个高斯空间的图像相减就得到了DoG（高斯差分，Difference of Gaussian）图像。定义为：
+$$
+D(x,y,\sigma)=|G(x,y,k\sigma)-G(x,y,\sigma)|*I(x,y) \\
+=L(x,y,k\sigma)-L(x,y,\sigma)
+$$
+高斯金字塔的组数一般为：$o=[log_2min(m,n)] -a$。$m, n$分别为图像的行和列。
+
+
+
+​	为了寻找空间的极值点，每个像素点要和同一尺度空间（图像域）和相邻尺度空间（尺度域）的所有相邻点进行比较，当其大于（或小于）所有相邻的点时，该点就是极值点。即要和邻近的26个像素点进行比较。
+
+​	由于每组图像的第一层和最后一层是无法进行比较取得极值的。为了满足尺度变换的连续性，在每一组图像的顶层继续使用高斯模糊生成3幅图像，则高斯金字塔每组有$S+3$层图像，DoG金字塔每组有$S+2$图像。 ？？
+
+
+
+​	剔除不好的极值点：1）低对比度的特征点；2）不稳定的边缘响应点。 ？？
+
+
+
+​	求取特征点的主方向
+
+​	为了实现图像旋转不变性，需要给特征点的方向进行赋值。其求取过程类似HOG计算梯度强度值$g$和梯度方向$\theta$。然后使用直方图来统计特征点领域内像素对应的梯度强度和梯度方向，在直方图中的峰值就是该特征点的主方向。计算以特征点位中心、以$3\times 1.5\sigma$为半径的区域内各个像素点的梯度强制和梯度方向。在梯度直方图中，当存在一个相当于主峰值80%能量的柱值时，则可将这个方向认为是该特征点的辅助方向。所以，一个特征点可能检测到多个方向。
+
+​	
+
+​	生成特征描述子
+
+​	为了保证特征矢量的旋转不变性，需以特征点位中心，在附近领域内将坐标轴旋转$\theta$（特征点的主方向）度，即将坐标轴旋转为特征点的方向，旋转后领域内的像素坐标为：
+$$
+\begin{bmatrix}
+x'\\ 
+y'
+\end{bmatrix}=\begin{bmatrix}
+cos\theta & -sin\theta \\ 
+sin\theta & cos\theta
+\end{bmatrix}\begin{bmatrix}
+x\\ 
+y
+\end{bmatrix}
+$$
+​	旋转后，以特征点位中心取$16\times 16$的窗口，求取每个像素的梯度值和梯度方向，之后在每个$4\times 4$的小块上绘制8个方向的梯度直方图，即可形成一个种子点。此时，每个特征点有16个种子点组成，每个种子点有8个方向的向量信息，即可产生$4\times 4\times 8=128$维的SIFT特征向量。最后，做归一化处理，去除光照的影响。
+
+![这里写图片描述](https://img-blog.csdn.net/20180808163031626?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1Nha3VyYTU1/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+
+
+
+
 SIFT算法原理解析：https://blog.csdn.net/hit2015spring/article/details/52895367
+
+SIFT四部曲——极值检测和定位：https://blog.csdn.net/hit2015spring/article/details/52972890
+
+SIFT四部曲——方向角度确定：https://blog.csdn.net/hit2015spring/article/details/56673955
 
 SIFT算法总结：https://blog.csdn.net/jancis/article/details/80824793
 
 
 
 ### SURF
+
+
+
+
+
+### Harris
+
+
+
+
+
+### Fast算子
 
